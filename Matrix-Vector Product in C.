@@ -3,83 +3,96 @@
 #include <time.h>
 #include <math.h>
 
-#define N 100
+#define MATRIX_SIZE 100
 
-// Function to calculate the dot product using nested loops
-void dot_product_nested_loops(const double A[N][N], const double x[N], double b[N]) {
-    for (int i = 0; i < N; i++) {
-        b[i] = 0.0;
-        for (int j = 0; j < N; j++) {
-            b[i] += A[i][j] * x[j];
+// Function to initialize a random matrix of size NxN
+void initializeMatrix(double matrix[MATRIX_SIZE][MATRIX_SIZE]) {
+    for (int i = 0; i < MATRIX_SIZE; i++) {
+        for (int j = 0; j < MATRIX_SIZE; j++) {
+            matrix[i][j] = (double)rand() / RAND_MAX;
+        }
+    }
+}
+
+// Function to calculate the matrix product using nested loops
+void matrixMultiplicationNestedLoops(double A[MATRIX_SIZE][MATRIX_SIZE], double B[MATRIX_SIZE][MATRIX_SIZE], double C[MATRIX_SIZE][MATRIX_SIZE]) {
+    for (int i = 0; i < MATRIX_SIZE; i++) {
+        for (int j = 0; j < MATRIX_SIZE; j++) {
+            C[i][j] = 0.0;
+            for (int k = 0; k < MATRIX_SIZE; k++) {
+                C[i][j] += A[i][k] * B[k][j];
+            }
         }
     }
 }
 
 int main() {
-    double A[N][N];
-    double x[N];
-    double b[N], bb[N], bbb[N]; // Results
-
-    // Initialize the vectors with random values
     srand(time(NULL));
-    for (int i = 0; i < N; i++) {
-        x[i] = (double)rand() / RAND_MAX;
-        for (int j = 0; j < N; j++) {
-            A[i][j] = (double)rand() / RAND_MAX;
-        }
-    }
 
-    // Measure time for the nested loops method
+    double matrixA[MATRIX_SIZE][MATRIX_SIZE];
+    double matrixB[MATRIX_SIZE][MATRIX_SIZE];
+    double matrixC[MATRIX_SIZE][MATRIX_SIZE];
+    double matrixCC[MATRIX_SIZE][MATRIX_SIZE];
+    double matrixCCC[MATRIX_SIZE][MATRIX_SIZE];
+
+    // Matrix Initialization
+    initializeMatrix(matrixA);
+    initializeMatrix(matrixB);
+
+    // Matrix Multiplication Using Nested Loops
     clock_t start = clock();
-    dot_product_nested_loops(A, x, b);
+    matrixMultiplicationNestedLoops(matrixA, matrixB, matrixC);
     clock_t end = clock();
-    double time_nested_loops = (double)(end - start) / CLOCKS_PER_SEC;
+    double timeNestedLoops = (double)(end - start) / CLOCKS_PER_SEC;
 
-    // Measure time for the matrix operation method
+    // Matrix Multiplication Using Vectorization (direct loop)
     start = clock();
-    for (int i = 0; i < N; i++) {
-        bbb[i] = 0.0;
-        for (int j = 0; j < N; j++) {
-            bbb[i] += A[i][j] * x[j];
+    matrixMultiplicationNestedLoops(matrixA, matrixB, matrixCC);
+    end = clock();
+    double timeVectorization = (double)(end - start) / CLOCKS_PER_SEC;
+
+    // Matrix Multiplication Using Matrix Operation (direct multiplication)
+    start = clock();
+    for (int i = 0; i < MATRIX_SIZE; i++) {
+        for (int j = 0; j < MATRIX_SIZE; j++) {
+            matrixCCC[i][j] = 0.0;
+            for (int k = 0; k < MATRIX_SIZE; k++) {
+                matrixCCC[i][j] += matrixA[i][k] * matrixB[k][j];
+            }
         }
     }
     end = clock();
-    double time_matrix_operation = (double)(end - start) / CLOCKS_PER_SEC;
+    double timeMatrixOperation = (double)(end - start) / CLOCKS_PER_SEC;
 
-    // Measure time for the vectorized method
-    start = clock();
-    for (int i = 0; i < N; i++) {
-        bb[i] = 0.0;
-        for (int j = 0; j < N; j++) {
-            bb[i] += A[i][j] * x[j];
+    // Timing Measurements
+
+    // Norm Calculation
+    double normCC = 0.0;
+    double normCCC = 0.0;
+
+    for (int i = 0; i < MATRIX_SIZE; i++) {
+        for (int j = 0; j < MATRIX_SIZE; j++) {
+            normCC += (matrixC[i][j] - matrixCC[i][j]) * (matrixC[i][j] - matrixCC[i][j]);
+            normCCC += (matrixC[i][j] - matrixCCC[i][j]) * (matrixC[i][j] - matrixCCC[i][j]);
         }
     }
-    end = clock();
-    double time_vectorization = (double)(end - start) / CLOCKS_PER_SEC;
 
-    // Calculate the norms and additional speedup
-    double norm_bb = 0.0;
-    double norm_bbb = 0.0;
-    for (int i = 0; i < N; i++) {
-        norm_bb += (b[i] - bb[i]) * (b[i] - bb[i]);
-        norm_bbb += (b[i] - bbb[i]) * (b[i] - bbb[i]);
-    }
-    norm_bb = sqrt(norm_bb);
-    norm_bbb = sqrt(norm_bbb);
+    normCC = sqrt(normCC);
+    normCCC = sqrt(normCCC);
 
-    double speedup_nested_loops = time_nested_loops / time_matrix_operation;
-    double speedup_vectorization = time_nested_loops / time_vectorization;
-    double additional_speedup = time_nested_loops / time_matrix_operation;
+    // Speedup Calculations
+    double speedupNestedLoopsToVectorization = timeNestedLoops / timeVectorization;
+    double speedupNestedLoopsToMatrixOperation = timeNestedLoops / timeMatrixOperation;
+    double speedupVectorizationToMatrixOperation = timeVectorization / timeMatrixOperation;
 
-    // Print results
-    printf("Matrix-Vector Multiplication Using Nested Loops: %f\n", norm_bb);
-    printf("Matrix-Vector Multiplication Using Matrix Operation: %f\n", norm_bbb);
-    printf("Matrix-Vector Multiplication Using Vectorization: %f\n", norm_bb);
-    printf("Speedup (Nested Loops vs. Matrix Operation): %f\n", speedup_nested_loops);
-    printf("Speedup (Nested Loops vs. Vectorization): %f\n", additional_speedup);
-    printf("Norm (b - bb): %f\n", norm_bb);
-    printf("Norm (b - bbb): %f\n", norm_bbb);
-    printf("Additional Speedup (Nested Loops vs. Matrix Operation): %f\n", additional_speedup);
+    // Output
+    printf("Matrix Multiplication Using Nested Loops: %f\n", timeNestedLoops);
+    printf("Matrix Multiplication Using Matrix Operation: %f\n", timeMatrixOperation);
+    printf("Matrix Multiplication Using Vectorization: %f\n", timeVectorization);
+    printf("Speedup (Nested Loops vs. Matrix Operation): %f\n", speedupNestedLoopsToMatrixOperation);
+    printf("Speedup (Nested Loops vs. Vectorization): %f\n", speedupNestedLoopsToVectorization);
+    printf("Norm (C - CC): %f\n", normCC);
+    printf("Norm (C - CCC): %f\n", normCCC);
 
     return 0;
 }
