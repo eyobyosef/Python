@@ -1,0 +1,85 @@
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <math.h>
+
+#define N 100
+
+// Function to calculate the dot product using nested loops
+void dot_product_nested_loops(const double A[N][N], const double x[N], double b[N]) {
+    for (int i = 0; i < N; i++) {
+        b[i] = 0.0;
+        for (int j = 0; j < N; j++) {
+            b[i] += A[i][j] * x[j];
+        }
+    }
+}
+
+int main() {
+    double A[N][N];
+    double x[N];
+    double b[N], bb[N], bbb[N]; // Results
+
+    // Initialize the vectors with random values
+    srand(time(NULL));
+    for (int i = 0; i < N; i++) {
+        x[i] = (double)rand() / RAND_MAX;
+        for (int j = 0; j < N; j++) {
+            A[i][j] = (double)rand() / RAND_MAX;
+        }
+    }
+
+    // Measure time for the nested loops method
+    clock_t start = clock();
+    dot_product_nested_loops(A, x, b);
+    clock_t end = clock();
+    double time_nested_loops = (double)(end - start) / CLOCKS_PER_SEC;
+
+    // Measure time for the matrix operation method
+    start = clock();
+    for (int i = 0; i < N; i++) {
+        bbb[i] = 0.0;
+        for (int j = 0; j < N; j++) {
+            bbb[i] += A[i][j] * x[j];
+        }
+    }
+    end = clock();
+    double time_matrix_operation = (double)(end - start) / CLOCKS_PER_SEC;
+
+    // Measure time for the vectorized method
+    start = clock();
+    for (int i = 0; i < N; i++) {
+        bb[i] = 0.0;
+        for (int j = 0; j < N; j++) {
+            bb[i] += A[i][j] * x[j];
+        }
+    }
+    end = clock();
+    double time_vectorization = (double)(end - start) / CLOCKS_PER_SEC;
+
+    // Calculate the norms and additional speedup
+    double norm_bb = 0.0;
+    double norm_bbb = 0.0;
+    for (int i = 0; i < N; i++) {
+        norm_bb += (b[i] - bb[i]) * (b[i] - bb[i]);
+        norm_bbb += (b[i] - bbb[i]) * (b[i] - bbb[i]);
+    }
+    norm_bb = sqrt(norm_bb);
+    norm_bbb = sqrt(norm_bbb);
+
+    double speedup_nested_loops = time_nested_loops / time_matrix_operation;
+    double speedup_vectorization = time_nested_loops / time_vectorization;
+    double additional_speedup = time_nested_loops / time_matrix_operation;
+
+    // Print results
+    printf("Matrix-Vector Multiplication Using Nested Loops: %f\n", norm_bb);
+    printf("Matrix-Vector Multiplication Using Matrix Operation: %f\n", norm_bbb);
+    printf("Matrix-Vector Multiplication Using Vectorization: %f\n", norm_bb);
+    printf("Speedup (Nested Loops vs. Matrix Operation): %f\n", speedup_nested_loops);
+    printf("Speedup (Nested Loops vs. Vectorization): %f\n", additional_speedup);
+    printf("Norm (b - bb): %f\n", norm_bb);
+    printf("Norm (b - bbb): %f\n", norm_bbb);
+    printf("Additional Speedup (Nested Loops vs. Matrix Operation): %f\n", additional_speedup);
+
+    return 0;
+}
